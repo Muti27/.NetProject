@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Mvc.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +8,9 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("ProjectDb"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
