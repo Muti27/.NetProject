@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Mvc.Data;
 using Mvc.Dtos;
 using Mvc.Models;
@@ -19,12 +20,12 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAllProjects()
+    public async Task<IActionResult> Get()
     {
-        var dtos = _context.Projects
+        var dtos = await _context.Projects
             .AsQueryable()
             .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
-            .ToList();
+            .ToListAsync();
 
         return Ok(dtos);
     }
@@ -58,14 +59,14 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult Create(CreateProjectDto createDto)
+    public async Task<ActionResult> Create(CreateProjectDto createDto)
     {
         if (!ModelState.IsValid)
             return BadRequest();
 
         var project = _mapper.Map<Project>(createDto);
         _context.Projects.Add(project);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         var resultDto = _mapper.Map<ProjectDto>(project);
         return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, resultDto);

@@ -10,7 +10,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("ProjectDb"));
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite("Data Source=app.db"));
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
