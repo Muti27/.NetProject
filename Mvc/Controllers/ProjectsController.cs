@@ -20,16 +20,16 @@ public class ProjectsController : ControllerBase
 
     [HttpGet]
     public IActionResult GetAllProjects()
-    {      
+    {
         var dtos = _context.Projects
             .AsQueryable()
             .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
             .ToList();
 
-        return Ok(dtos);        
+        return Ok(dtos);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("ById/{id}")]
     public IActionResult GetProjectById(int id)
     {
         var dtos = _context.Projects
@@ -43,11 +43,25 @@ public class ProjectsController : ControllerBase
         return Ok(dtos);
     }
 
+    [HttpGet("ByName/{name}")]
+    public IActionResult GetProjectByName(string name)
+    {
+        var dtos = _context.Projects
+            .Where(p => p.Name == name)
+            .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
+            .FirstOrDefault();
+
+        if (dtos == null)
+            return NotFound();
+
+        return Ok(dtos);
+    }
+
     [HttpPost]
     public IActionResult Create(CreateProjectDto createDto)
     {
         if (!ModelState.IsValid)
-                return BadRequest();
+            return BadRequest();
 
         var project = _mapper.Map<Project>(createDto);
         _context.Projects.Add(project);
