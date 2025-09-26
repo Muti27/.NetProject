@@ -1,10 +1,9 @@
-﻿namespace Mvc.Models
+﻿namespace Mvc.Dtos
 {
-    public class Project
+    public class ProjectDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public DateTime CreateTime { get; set; }
     }
 }

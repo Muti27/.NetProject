@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Mvc.Data;
+using Mvc.Dtos;
 using Mvc.Models;
 
 [ApiController]
@@ -7,50 +10,64 @@ using Mvc.Models;
 public class ProjectsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
 
-    public ProjectsController(AppDbContext appDbContext)
+    public ProjectsController(AppDbContext appDbContext, IMapper mapper)
     {
         _context = appDbContext;
+        _mapper = mapper;
     }
 
     [HttpGet]
     public IActionResult GetAllProjects()
     {      
-        return Ok(_context.Projects.ToList());
+        var dtos = _context.Projects
+            .AsQueryable()
+            .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
+            .ToList();
+
+        return Ok(dtos);        
     }
 
     [HttpGet("{id}")]
     public IActionResult GetProjectById(int id)
     {
-        var project = _context.Projects.Find(id);
-        if (project == null)
-        {
-            return NotFound("project not found.");
-        }
+        var dtos = _context.Projects
+            .Where(p => p.Id == id)
+            .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
+            .FirstOrDefault();
 
-        return Ok(project);
+        if (dtos == null)
+            return NotFound();
+
+        return Ok(dtos);
     }
 
     [HttpPost]
-    public IActionResult Create(Project project)
+    public IActionResult Create(CreateProjectDto createDto)
     {
+        if (!ModelState.IsValid)
+                return BadRequest();
+
+        var project = _mapper.Map<Project>(createDto);
         _context.Projects.Add(project);
         _context.SaveChanges();
 
-        return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, project);
+        var resultDto = _mapper.Map<ProjectDto>(project);
+        return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, resultDto);
     }
 
     [HttpPut("{id}")]
-    public IActionResult Update(int id, Project updatedProject)
+    public IActionResult Update(int id, UpdateProjectDto updateDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest();
+
         var project = _context.Projects.Find(id);
         if (project == null)
-        {
             return NotFound();
-        }
 
-        project.Name = updatedProject.Name;
-        project.Description = updatedProject.Description;
+        project = _mapper.Map<Project>(updateDto);
         _context.SaveChanges();
 
         return NoContent();
