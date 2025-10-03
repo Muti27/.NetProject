@@ -65,7 +65,7 @@ builder.Services.AddAuthentication(opt =>
 
         ValidIssuer = "mutiapp",
         ValidAudience = "mutiapp",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TestSecretKey"))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("Oh4KfzBbM0FORVHZ5KUhd70OChpXVtae"))
     };
 });
 
