@@ -6,6 +6,7 @@ using Mvc.Data;
 using Mvc.Dtos;
 using Mvc.Models;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Mvc.Controllers
 {
@@ -37,7 +38,8 @@ namespace Mvc.Controllers
             {
                 Username = regisiterDto.Username,
                 Email = regisiterDto.Email,
-                Role = ERole.User
+                Role = ERole.User,
+                CreateTime = DateTime.UtcNow
             };
             user.PasswordHash = pwHasher.HashPassword(user, regisiterDto.Password);
 
@@ -69,20 +71,24 @@ namespace Mvc.Controllers
 
         [Authorize]
         [HttpGet("auth/GetProfile")]
-        public IActionResult GetProfile()
+        public async Task<IActionResult> GetProfile()
         {
             var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var email = User.FindFirstValue(ClaimTypes.Email);            
-            var name = User.FindFirstValue(ClaimTypes.Name);
+            var email = User.FindFirstValue(ClaimTypes.Email);
 
-            if (id == null || email == null || name == null)
+            if (id == null || email == null)
                 return Unauthorized(new { message = "" });
-                                    
+
+            var user = await dbContext.Users.FindAsync(int.Parse(id));
+            if (user == null)
+                return NotFound();
+
             return Ok(new
             {
-                Id = id,
-                Username = name,
-                Email = email
+                id,                
+                email,
+                user.Username,
+                user.CreateTime
             });
         }
 
