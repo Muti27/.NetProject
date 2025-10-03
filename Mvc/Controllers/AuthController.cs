@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Mvc.Data;
 using Mvc.Dtos;
 using Mvc.Models;
+using System.Security.Claims;
 
 namespace Mvc.Controllers
 {
@@ -35,7 +36,8 @@ namespace Mvc.Controllers
             var user = new User
             {
                 Username = regisiterDto.Username,
-                Email = regisiterDto.Email
+                Email = regisiterDto.Email,
+                Role = ERole.User
             };
             user.PasswordHash = pwHasher.HashPassword(user, regisiterDto.Password);
 
@@ -66,11 +68,22 @@ namespace Mvc.Controllers
         }
 
         [Authorize]
-        [HttpGet("auth/GetById/{id}")]
-        public async Task<IActionResult> GetById()
+        [HttpGet("auth/GetProfile")]
+        public IActionResult GetProfile()
         {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.Email);            
+            var name = User.FindFirstValue(ClaimTypes.Name);
 
-            return Ok();
+            if (id == null || email == null || name == null)
+                return Unauthorized(new { message = "" });
+                                    
+            return Ok(new
+            {
+                Id = id,
+                Username = name,
+                Email = email
+            });
         }
 
         /// <summary>
