@@ -19,6 +19,9 @@ namespace Mvc
             CreateMap<UpdateProjectDto, Project>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreateTime, opt => opt.Ignore());
+
+            //sam
+            CreateMap<User, RegisiterDto>();
         }
     }
 }
