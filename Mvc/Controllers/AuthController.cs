@@ -3,10 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mvc.Data;
-using Mvc.Dtos;
 using Mvc.Models;
+using Mvc.Models.Dtos;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace Mvc.Controllers
 {
@@ -21,12 +20,13 @@ namespace Mvc.Controllers
             pwHasher = pwh;
         }
 
-        public IActionResult Index()
+        [HttpGet]
+        public IActionResult Login()
         {
             return View();
         }
 
-        [HttpPost("auth/Regisiter")]
+        [HttpPost("Regisiter")]
         public async Task<IActionResult> Regisiter(RegisiterDto regisiterDto)
         {
             if (await dbContext.Users.AnyAsync(x => x.Email == regisiterDto.Email))
@@ -49,7 +49,7 @@ namespace Mvc.Controllers
             return Ok();
         }
 
-        [HttpPost("auth/Login")]
+        [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
             var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email);
@@ -70,7 +70,7 @@ namespace Mvc.Controllers
         }
 
         [Authorize]
-        [HttpGet("auth/GetProfile")]
+        [HttpGet("GetProfile")]
         public async Task<IActionResult> GetProfile()
         {
             var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -92,15 +92,18 @@ namespace Mvc.Controllers
             });
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        private bool CheckPassword(string password)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("Delete")]
+        public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
         {
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
+            if (user == null)
+                return NotFound();
 
+            dbContext.Users.Remove(user);
+            await dbContext.SaveChangesAsync();
 
-            return true;
+            return Ok();
         }
     }
 }
