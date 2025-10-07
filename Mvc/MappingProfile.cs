@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Mvc.Dtos;
 using Mvc.Models;
+using Mvc.Models.Dtos;
 
 namespace Mvc
 {
