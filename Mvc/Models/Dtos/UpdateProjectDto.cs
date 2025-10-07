@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Mvc.Dtos
+namespace Mvc.Models.Dtos
 {
-    public class CreateProjectDto
+    public class UpdateProjectDto
     {
         [Required]
         public string Name { get; set; }

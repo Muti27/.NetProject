@@ -1,4 +1,4 @@
-﻿namespace Mvc.Dtos
+﻿namespace Mvc.Models.Dtos
 {
     public class ProjectDto
     {
