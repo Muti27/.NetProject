@@ -47,6 +47,8 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Password Hasher
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+builder.Services.AddSession();
+
 // JWT 認證
 builder.Services.AddAuthentication(opt =>
 {
@@ -87,6 +89,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseSession();
 
 app.UseRouting();
 
