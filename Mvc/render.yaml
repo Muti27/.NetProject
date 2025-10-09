@@ -5,3 +5,4 @@ services:
     buildCommand: dotnet publish -c Release -o out
     startCommand: dotnet out/Mvc.dll
     plan: free
+    dockerfilePath: ./Dockerfile
