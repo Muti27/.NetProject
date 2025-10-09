@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mvc.Data;
 using Mvc.Models;
 using Mvc.Models.Dtos;
+using System.Collections.Immutable;
+using System.Security.Claims;
 
 namespace Mvc.Controllers
 {
@@ -31,8 +36,14 @@ namespace Mvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Regisiter(RegisiterDto regisiterDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
             if (await dbContext.Users.AnyAsync(x => x.Email == regisiterDto.Email))
             {
+                ViewBag.Error = "此信箱已經註冊過會員。";
                 return View();
             }
 
@@ -54,10 +65,15 @@ namespace Mvc.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
             var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email);
             if (user == null)
             {
-                ViewBag.Error = "此信箱已註冊。";
+                ViewBag.Error = "帳號或密碼輸入錯誤。";
                 return View();
             }
 
@@ -72,9 +88,42 @@ namespace Mvc.Controllers
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("UserDisplayName", user.Username ?? user.Email);
 
+#if UseJWT
             var token = JWTHelper.GenerateToken(user);
 
-            return RedirectToAction("Index", "Home", routeValues: token);
+            Response.Cookies.Append("jwt", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+#else
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            //寫入 cookie
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+#endif
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return RedirectToAction("Index", "Home");
         }
 
         //[Authorize]
