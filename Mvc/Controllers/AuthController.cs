@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mvc.Data;
 using Mvc.Models;
 using Mvc.Models.Dtos;
-using System.Security.Claims;
 
 namespace Mvc.Controllers
 {
@@ -20,18 +18,22 @@ namespace Mvc.Controllers
             pwHasher = pwh;
         }
 
-        [HttpGet]
+        public IActionResult Regisiter()
+        {
+            return View();
+        }
+
         public IActionResult Login()
         {
             return View();
         }
 
-        [HttpPost("Regisiter")]
+        [HttpPost]
         public async Task<IActionResult> Regisiter(RegisiterDto regisiterDto)
         {
             if (await dbContext.Users.AnyAsync(x => x.Email == regisiterDto.Email))
             {
-                return BadRequest("");
+                return View();
             }
 
             var user = new User
@@ -46,64 +48,70 @@ namespace Mvc.Controllers
             dbContext.Users.Add(user);
             await dbContext.SaveChangesAsync();
 
-            return Ok();
+            return RedirectToAction("Index", "Home");
         }
 
-        [HttpPost("Login")]
+        [HttpPost]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
             var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email);
             if (user == null)
             {
-                return BadRequest();
+                ViewBag.Error = "此信箱已註冊。";
+                return View();
             }
 
             var result = pwHasher.VerifyHashedPassword(user, user.PasswordHash, loginDto.Password);
             if (result == PasswordVerificationResult.Failed)
             {
-                return BadRequest();
+                ViewBag.Error = "帳號或密碼輸入錯誤。";
+                return View();
             }
+
+            // 登入成功 -> 可以暫存Session
+            HttpContext.Session.SetString("UserEmail", user.Email);
+            HttpContext.Session.SetString("UserDisplayName", user.Username ?? user.Email);
 
             var token = JWTHelper.GenerateToken(user);
 
-            return Ok(new { token });
+            return RedirectToAction("Index", "Home", routeValues: token);
         }
 
-        [Authorize]
-        [HttpGet("GetProfile")]
-        public async Task<IActionResult> GetProfile()
-        {
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var email = User.FindFirstValue(ClaimTypes.Email);
+        //[Authorize]
+        //[HttpGet("GetProfile")]
+        //public async Task<IActionResult> GetProfile()
+        //{
+        //    var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    var email = User.FindFirstValue(ClaimTypes.Email);
 
-            if (id == null || email == null)
-                return Unauthorized(new { message = "" });
+        //    if (id == null || email == null)
+        //        return Unauthorized(new { message = "" });
 
-            var user = await dbContext.Users.FindAsync(int.Parse(id));
-            if (user == null)
-                return NotFound();
+        //    var user = await dbContext.Users.FindAsync(int.Parse(id));
+        //    if (user == null)
+        //        return NotFound();
 
-            return Ok(new
-            {
-                id,                
-                email,
-                user.Username,
-                user.CreateTime
-            });
-        }
+        //    return Ok(new
+        //    {
+        //        id,
+        //        email,
+        //        user.Username,
+        //        user.CreateTime
+        //    });
+        //}
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost("Delete")]
-        public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
-        {
-            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
-            if (user == null)
-                return NotFound();
+        ////[Authorize(Roles = "Admin")]
+        //[HttpPost("Delete")]
+        //public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
+        //{
+        //    var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
+        //    if (user == null)
+        //        return NotFound();
 
-            dbContext.Users.Remove(user);
-            await dbContext.SaveChangesAsync();
+        //    dbContext.Users.Remove(user);
+        //    await dbContext.SaveChangesAsync();
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
     }
 }

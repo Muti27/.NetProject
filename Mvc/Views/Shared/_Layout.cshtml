@@ -27,6 +27,24 @@
                         </li>
                     </ul>
                 </div>
+
+                @if (User.Identity?.IsAuthenticated ?? false)
+                {
+                    <span>歡迎，@User.Identity.Name</span>
+                    @* <a asp-controller="Auth" asp-action="Logout">登出</a> *@
+                }
+                else
+                {
+                    <ul class="navbar-collapse">
+                        <li>
+                            <a asp-controller="Auth" asp-action="Login">登入</a>
+                        </li>
+                        <li>
+                            <a asp-controller="Auth" asp-action="Regisiter">註冊</a>
+                        </li>
+                    </ul>
+                }
+
             </div>
         </nav>
     </header>
