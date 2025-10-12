@@ -7,6 +7,7 @@ using Mvc;
 using Mvc.Data;
 using Mvc.Models;
 using System.Text;
+using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,14 @@ builder.Services.AddSwaggerGen(c =>
 #endif
 });
 
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite("Data Source=app.db"));
+#if DEBUG
+var connectionString = builder.Configuration.GetConnectionString("Local");
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
+#else
+//使用Render PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+#endif
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Password Hasher
@@ -108,6 +116,14 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 執行 Migrations (建表)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// 預設路由格式
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
