@@ -46,13 +46,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 #if DEBUG
-var connectionString = builder.Configuration.GetConnectionString("Local");
+var connectionString = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
 #else
-//使用Render PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
 #endif
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Password Hasher
