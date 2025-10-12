@@ -46,8 +46,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 #if DEBUG
-var connectionString = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
+var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
 #else
 var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
