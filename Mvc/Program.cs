@@ -46,11 +46,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 #if DEBUG
-var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+var connectionString = builder.Configuration.GetConnectionString("Local");
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString, x => x.MigrationsAssembly("Mvc").MigrationsHistoryTable("__EFMigrationsHistory", "sqlite")));
 #else
 var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString, x => x.MigrationsAssembly("Mvc").MigrationsHistoryTable("__EFMigrationsHistory", "postgres")));;
 #endif
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
