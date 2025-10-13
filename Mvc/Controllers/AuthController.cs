@@ -100,7 +100,9 @@ namespace Mvc.Controllers
 #else
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),                
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -126,28 +128,31 @@ namespace Mvc.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        //[Authorize]
-        //[HttpGet("GetProfile")]
-        //public async Task<IActionResult> GetProfile()
-        //{
-        //    var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    var email = User.FindFirstValue(ClaimTypes.Email);
+        [Authorize]
+        public async Task<IActionResult> Profile()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (id == null)
+            {                
+                return RedirectToAction("Index", "Home");
+            }
 
-        //    if (id == null || email == null)
-        //        return Unauthorized(new { message = "" });
+            var user = await dbContext.Users.FindAsync(int.Parse(id));
+            if (user == null)
+            {
+                return NotFound();
+            }
 
-        //    var user = await dbContext.Users.FindAsync(int.Parse(id));
-        //    if (user == null)
-        //        return NotFound();
+            var profileDto = new UsereProfileDto
+            {
+                Email = user.Email,
+                Username = user.Username,
+                Role = user.Role,
+                CreateTime = user.CreateTime.ToLocalTime()
+            };
 
-        //    return Ok(new
-        //    {
-        //        id,
-        //        email,
-        //        user.Username,
-        //        user.CreateTime
-        //    });
-        //}
+            return View(profileDto);
+        }
 
         ////[Authorize(Roles = "Admin")]
         //[HttpPost("Delete")]

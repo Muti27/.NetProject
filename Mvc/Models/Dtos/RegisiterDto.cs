@@ -19,4 +19,12 @@ namespace Mvc.Models.Dtos
     {
         public int Id { get; set; }
     }
+
+    public class UsereProfileDto
+    { 
+        public string Email { get; set; }
+        public string Username { get; set; }
+        public ERole Role { get; set; }
+        public DateTime CreateTime { get; set; }
+    }
 }

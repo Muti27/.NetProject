@@ -30,7 +30,8 @@
 
                 @if (User.Identity?.IsAuthenticated ?? false)
                 {
-                    <span>歡迎，@User.Identity.Name</span>
+                    <span>歡迎，</span>
+                    <a asp-controller="Auth" asp-action="Profile">@User.Identity.Name</a>
                     <form asp-controller="Auth" asp-action="Logout" method="post" style="display:inline">
                         <button type="submit" class="btn btn-link">登出</button>
                     </form>
