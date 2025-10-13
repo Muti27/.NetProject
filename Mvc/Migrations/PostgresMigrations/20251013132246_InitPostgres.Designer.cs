@@ -10,8 +10,8 @@ using Mvc.Data;
 
 namespace Mvc.Migrations.PostgresMigrations
 {
-    [DbContext(typeof(AppDbContext))]
-    [Migration("20251013091253_InitPostgres")]
+    [DbContext(typeof(PostgresDbContext))]
+    [Migration("20251013132246_InitPostgres")]
     partial class InitPostgres
     {
         /// <inheritdoc />

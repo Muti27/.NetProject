@@ -9,8 +9,8 @@ using Mvc.Data;
 
 namespace Mvc.Migrations.SqliteMigrations
 {
-    [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(SQLiteDbContext))]
+    partial class SQLiteDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

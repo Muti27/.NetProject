@@ -45,13 +45,17 @@ builder.Services.AddSwaggerGen(c =>
 #endif
 });
 
-#if DEBUG
-var connectionString = builder.Configuration.GetConnectionString("Local");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString, x => x.MigrationsAssembly("Mvc").MigrationsHistoryTable("__EFMigrationsHistory", "sqlite")));
-#else
-var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
-builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString, x => x.MigrationsAssembly("Mvc").MigrationsHistoryTable("__EFMigrationsHistory", "postgres")));;
-#endif
+// 本地sqlite 正式postgres
+if (builder.Environment.IsDevelopment())
+{
+    var connectionString = builder.Configuration.GetConnectionString("Local");
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
+}
+else
+{
+    var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+}
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
@@ -115,13 +119,6 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// 執行 Migrations (建表)
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
 
 // 預設路由格式
 app.MapControllerRoute(
