@@ -154,18 +154,31 @@ namespace Mvc.Controllers
             return View(profileDto);
         }
 
-        ////[Authorize(Roles = "Admin")]
-        //[HttpPost("Delete")]
-        //public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
-        //{
-        //    var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
-        //    if (user == null)
-        //        return NotFound();
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ManagerUsers()
+        {           
+            var users = await dbContext.Users.ToListAsync();
 
-        //    dbContext.Users.Remove(user);
-        //    await dbContext.SaveChangesAsync();
+            foreach (var user in users)
+            {
+                user.CreateTime = user.CreateTime.ToLocalTime();
+            }
 
-        //    return Ok();
-        //}
+            return View(users);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
+        {
+            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
+            if (user == null)
+                return NotFound();
+
+            dbContext.Users.Remove(user);
+            await dbContext.SaveChangesAsync();
+
+            return RedirectToAction("ManagerUsers");
+        }
     }
 }

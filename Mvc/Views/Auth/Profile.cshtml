@@ -8,4 +8,9 @@
     <p>信箱：@Model.Email</p>
     <p>權限：@Model.Role</p>
     <p>註冊時間：@Model.CreateTime</p>
+    
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="ManagerUsers">管理使用者</a>
+    }
 </div>

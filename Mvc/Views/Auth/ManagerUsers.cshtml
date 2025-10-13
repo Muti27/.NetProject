@@ -1,0 +1,45 @@
+﻿@using System.Security.Claims
+@model IEnumerable<User>
+
+@{
+    ViewData["Title"] = "使用者列表";
+
+    var currentId = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>名稱</th>
+            <th>Email</th>
+            <th>角色</th>
+            <th>建立時間</th>
+            <th>設定</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Id</td>
+                <td>@user.Username</td>
+                <td>@user.Email</td>
+                <td>@user.Role</td>
+                <td>@user.CreateTime.ToString("yyyy/MM/dd HH:mm:ss")</td>
+
+                <td>
+                @if (user.Id.ToString() != currentId)
+                    {
+                        <form asp-action="DeleteUser" method="post">
+                        <input asp-for="@user.Id" type="hidden" name="Id" />
+                        <button type="submit">刪除</button>
+                    </form>
+                }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
