@@ -27,4 +27,11 @@ namespace Mvc.Models.Dtos
         public ERole Role { get; set; }
         public DateTime CreateTime { get; set; }
     }
+
+    public class ChangePasswordDto
+    {
+        public string oldPassword { get; set; }
+        public string newPassword { get; set; }
+        public string newPasswordVaild { get; set; }
+    }
 }

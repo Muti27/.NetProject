@@ -13,7 +13,7 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>名稱</th>
+            <th>暱稱</th>
             <th>Email</th>
             <th>角色</th>
             <th>建立時間</th>
@@ -30,10 +30,10 @@
                 <td>@user.Role</td>
                 <td>@user.CreateTime.ToString("yyyy/MM/dd HH:mm:ss")</td>
 
-                <td>
+                <td align="center">
                 @if (user.Id.ToString() != currentId)
-                    {
-                        <form asp-action="DeleteUser" method="post">
+                {
+                    <form asp-action="DeleteUser" method="post">
                         <input asp-for="@user.Id" type="hidden" name="Id" />
                         <button type="submit">刪除</button>
                     </form>

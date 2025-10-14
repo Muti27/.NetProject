@@ -33,6 +33,11 @@ namespace Mvc.Controllers
             return View();
         }
 
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Regisiter(RegisiterDto regisiterDto)
         {
@@ -157,7 +162,7 @@ namespace Mvc.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManagerUsers()
         {           
-            var users = await dbContext.Users.ToListAsync();
+            var users = await dbContext.Users.OrderBy(x => x.Id).ToListAsync();
 
             foreach (var user in users)
             {
@@ -179,6 +184,44 @@ namespace Mvc.Controllers
             await dbContext.SaveChangesAsync();
 
             return RedirectToAction("ManagerUsers");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var user = await dbContext.Users.FindAsync(int.Parse(id));
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = pwHasher.VerifyHashedPassword(user, user.PasswordHash, dto.oldPassword);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                ViewBag.Error = "舊密碼輸入錯誤。";
+                return View();
+            }
+            else
+            {
+                if (dto.newPassword != dto.newPasswordVaild)
+                {
+                    ViewBag.Error = "密碼驗證錯誤。";
+                    return View();
+                }
+
+                user.PasswordHash = pwHasher.HashPassword(user, dto.newPassword);
+
+                dbContext.Users.Update(user);
+                await dbContext.SaveChangesAsync();
+
+                return RedirectToAction("Profile");
+            }
         }
     }
 }
