@@ -189,6 +189,12 @@ namespace Mvc.Controllers
         [HttpPost]
         public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "輸入資料有誤。");
+                return View(dto);
+            }
+
             var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (id == null)
             {
@@ -204,14 +210,14 @@ namespace Mvc.Controllers
             var result = pwHasher.VerifyHashedPassword(user, user.PasswordHash, dto.oldPassword);
             if (result == PasswordVerificationResult.Failed)
             {
-                ViewBag.Error = "舊密碼輸入錯誤。";
+                ModelState.AddModelError("oldPassword", "舊密碼輸入錯誤。");
                 return View();
             }
             else
             {
                 if (dto.newPassword != dto.newPasswordVaild)
                 {
-                    ViewBag.Error = "密碼驗證錯誤。";
+                    ModelState.AddModelError("newPasswordVaild", "密碼驗證錯誤。");
                     return View();
                 }
 
@@ -220,7 +226,9 @@ namespace Mvc.Controllers
                 dbContext.Users.Update(user);
                 await dbContext.SaveChangesAsync();
 
-                return RedirectToAction("Profile");
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+                return RedirectToAction("Login", "Auth");
             }
         }
     }
