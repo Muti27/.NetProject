@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "錯誤";
+    var code = ViewData["StatusCode"];
+}
+
+<h1>錯誤 @code</h1>
+
+@if ((int)code == 404)
+{
+    <p>找不到您要的頁面。</p>
+}
+else if ((int)code == 403)
+{
+    <p>您沒有權限查看此頁面。</p>
+}
+else
+{
+    <p>系統發生錯誤，請稍後再試。</p>
+}
+
+<a asp-controller="Home" asp-action="Index">回首頁</a>

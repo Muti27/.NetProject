@@ -23,6 +23,16 @@ namespace Mvc.Controllers
             return View();
         }
 
+        public IActionResult Crash()
+        {
+            throw new Exception("測試例外");
+        }
+
+        public IActionResult CrashStatue()
+        {
+            return NotFound();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
