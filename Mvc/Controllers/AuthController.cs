@@ -1,26 +1,28 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using Humanizer;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop.Infrastructure;
 using Mvc.Data;
 using Mvc.Models;
 using Mvc.Models.Dtos;
+using Mvc.Services;
 using System.Collections.Immutable;
+using System.Security;
 using System.Security.Claims;
 
 namespace Mvc.Controllers
 {
     public class AuthController : Controller
     {
-        private readonly AppDbContext dbContext;
-        private readonly IPasswordHasher<User> pwHasher;
+        private readonly IAuthService authService;
 
-        public AuthController(AppDbContext db, IPasswordHasher<User> pwh)
+        public AuthController(IAuthService auth)
         {
-            dbContext = db;
-            pwHasher = pwh;
+            authService = auth;
         }
 
         public IActionResult Regisiter()
@@ -46,25 +48,14 @@ namespace Mvc.Controllers
                 return View();
             }
 
-            if (await dbContext.Users.AnyAsync(x => x.Email == regisiterDto.Email))
+            var result = await authService.Regisiter(regisiterDto.Username, regisiterDto.Email, regisiterDto.Password);
+            if (result.Success == false)
             {
-                ViewBag.Error = "此信箱已經註冊過會員。";
+                ViewBag.Error = result.Message;
                 return View();
             }
 
-            var user = new User
-            {
-                Username = regisiterDto.Username,
-                Email = regisiterDto.Email,
-                Role = ERole.User,
-                CreateTime = DateTime.UtcNow
-            };
-            user.PasswordHash = pwHasher.HashPassword(user, regisiterDto.Password);
-
-            dbContext.Users.Add(user);
-            await dbContext.SaveChangesAsync();
-
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login");
         }
 
         [HttpPost]
@@ -75,24 +66,18 @@ namespace Mvc.Controllers
                 return View();
             }
 
-            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == loginDto.Email);
-            if (user == null)
+            var result = await authService.Login(loginDto.Email, loginDto.Password);
+            if (!result.Success)
             {
-                ViewBag.Error = "帳號或密碼輸入錯誤。";
-                return View();
-            }
-
-            var result = pwHasher.VerifyHashedPassword(user, user.PasswordHash, loginDto.Password);
-            if (result == PasswordVerificationResult.Failed)
-            {
-                ViewBag.Error = "帳號或密碼輸入錯誤。";
+                ViewBag.Error = result.Message;
                 return View();
             }
 
             // 登入成功 -> 可以暫存Session
-            HttpContext.Session.SetString("UserEmail", user.Email);
-            HttpContext.Session.SetString("UserDisplayName", user.Username ?? user.Email);
+            //HttpContext.Session.SetString("UserEmail", user.Email);
+            //HttpContext.Session.SetString("UserDisplayName", user.Username ?? user.Email);
 
+            var user = result.Data;
 #if UseJWT
             var token = JWTHelper.GenerateToken(user);
 
@@ -102,7 +87,7 @@ namespace Mvc.Controllers
                 Secure = true,
                 SameSite = SameSiteMode.Strict
             });
-#else
+#else           
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -142,11 +127,13 @@ namespace Mvc.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            var user = await dbContext.Users.FindAsync(int.Parse(id));
-            if (user == null)
+            var result = await authService.GetUser(int.Parse(id));
+            if (!result.Success)
             {
                 return NotFound();
             }
+
+            var user = result.Data;
 
             var profileDto = new UsereProfileDto
             {
@@ -162,7 +149,7 @@ namespace Mvc.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManagerUsers()
         {           
-            var users = await dbContext.Users.OrderBy(x => x.Id).ToListAsync();
+            List<User> users = await authService.GetUserList();
 
             foreach (var user in users)
             {
@@ -176,12 +163,17 @@ namespace Mvc.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteUser(DeleteDto deleteDto)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == deleteDto.Id);
-            if (user == null)
-                return NotFound();
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "輸入資料有誤。");
+                return View(deleteDto);
+            }
 
-            dbContext.Users.Remove(user);
-            await dbContext.SaveChangesAsync();
+            var result = await authService.DeleteUser(deleteDto.Id);
+            if (!result.Success)
+            {
+                return NotFound();
+            }
 
             return RedirectToAction("ManagerUsers");
         }
@@ -201,35 +193,16 @@ namespace Mvc.Controllers
                 return NotFound();
             }
 
-            var user = await dbContext.Users.FindAsync(int.Parse(id));
-            if (user == null)
+            var result = await authService.ChangePassword(int.Parse(id), dto.oldPassword, dto.newPassword, dto.newPasswordVaild);
+            if (!result.Success)
             {
-                return NotFound();
-            }
-
-            var result = pwHasher.VerifyHashedPassword(user, user.PasswordHash, dto.oldPassword);
-            if (result == PasswordVerificationResult.Failed)
-            {
-                ModelState.AddModelError("oldPassword", "舊密碼輸入錯誤。");
+                ModelState.AddModelError("", result.Message);
                 return View();
             }
-            else
-            {
-                if (dto.newPassword != dto.newPasswordVaild)
-                {
-                    ModelState.AddModelError("newPasswordVaild", "密碼驗證錯誤。");
-                    return View();
-                }
 
-                user.PasswordHash = pwHasher.HashPassword(user, dto.newPassword);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-                dbContext.Users.Update(user);
-                await dbContext.SaveChangesAsync();
-
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-                return RedirectToAction("Login", "Auth");
-            }
+            return RedirectToAction("Login", "Auth");
         }
     }
 }

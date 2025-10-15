@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using Mvc;
 using Mvc.Data;
 using Mvc.Models;
+using Mvc.Repository;
+using Mvc.Services;
 using System.Text;
 using System.Threading;
 
@@ -61,6 +63,8 @@ else
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Password Hasher
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddSession();
