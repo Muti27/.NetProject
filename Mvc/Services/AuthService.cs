@@ -1,7 +1,6 @@
-﻿using Humanizer;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Mvc.Models;
 using Mvc.Repository;
 
@@ -10,22 +9,29 @@ namespace Mvc.Services
     public interface IAuthService
     {
         Task<ServiceResult<User>> Login(string email, string password);
-        Task<ServiceResult<User>> Regisiter(string username, string email, string password);
+        Task<ServiceResult<User>> Regisiter(string username, string email, string password, string passwordVerify);
         Task<ServiceResult<User>> DeleteUser(int id);
         Task<ServiceResult<User>> ChangePassword(int id, string oldPassword, string newPassword, string newPasswordVaild);
         Task<ServiceResult<User>> GetUser(int id);
         Task<List<User>> GetUserList();
+        Task<ServiceResult<User>> ConfirmEmail(string email, string token);
     }
 
     public class AuthService : IAuthService
     {
         private readonly IUserRepository userRepository;
         private readonly IPasswordHasher<User> passwordHasher;
+        private readonly IEmailService emailService;
+        private readonly IMemoryCache memoryCache;
+        private readonly IHttpContextAccessor httpContextAccessor;
 
-        public AuthService(IUserRepository userRepo, IPasswordHasher<User> pwh)
+        public AuthService(IUserRepository userRepo, IPasswordHasher<User> pwh, IEmailService email, IMemoryCache cache, IHttpContextAccessor accessor)
         {
             userRepository = userRepo;
             passwordHasher = pwh;
+            emailService = email;
+            memoryCache = cache;
+            httpContextAccessor = accessor;
         }
 
         public async Task<ServiceResult<User>> GetUser(int id)
@@ -77,6 +83,11 @@ namespace Mvc.Services
                 };
             }
 
+            if (!user.IsApprovedEmail)
+            {
+                return ServiceResult<User>.Failed("此信箱尚未完成驗證。");
+            }
+
             return new ServiceResult<User>
             {
                 Success = true,
@@ -84,28 +95,40 @@ namespace Mvc.Services
             };
         }
 
-        public async Task<ServiceResult<User>> Regisiter(string username, string email, string password)
+        public async Task<ServiceResult<User>> Regisiter(string username, string email, string password, string passwordVerify)
         {
             var exists = await userRepository.GetUserByEmailAsync(email);
             if (exists != null)
             {
-                return new ServiceResult<User>
-                {
-                    Success = false,
-                    Message = "此信箱已經註冊過會員。"
-                };
+                return ServiceResult<User>.Failed("此信箱已經註冊過會員。");
+            }
+
+            if (password != passwordVerify)
+            {
+                return ServiceResult<User>.Failed("密碼驗證錯誤");
             }
 
             var user = new User
             {
-                Username = username,
+                Username = username ?? "新會員",
                 Email = email,
                 Role = ERole.User,
-                CreateTime = DateTime.UtcNow
+                CreateTime = DateTime.UtcNow,
+                IsApprovedEmail = false
             };
             user.PasswordHash = passwordHasher.HashPassword(user, password);
 
             await userRepository.AddAsync(user);
+
+            //發驗證信           
+            var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            var request = httpContextAccessor?.HttpContext?.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+            var confirmUrl = $"{baseUrl}/Auth/ConfirmEmail?email={email}&token={token}";
+
+            await emailService.SendEmailConfirmation(email, confirmUrl);
+
+            memoryCache.Set($"email-confirm={email}", token, TimeSpan.FromHours(24));
 
             return new ServiceResult<User>
             {
@@ -154,8 +177,6 @@ namespace Mvc.Services
                     Success = false,
                     Message = "舊密碼輸入錯誤。"
                 };
-                //ModelState.AddModelError("oldPassword", "舊密碼輸入錯誤。");
-                //return View();
             }
             else
             {
@@ -166,8 +187,6 @@ namespace Mvc.Services
                         Success = false,
                         Message = "密碼驗證錯誤。"
                     };
-                    //ModelState.AddModelError("newPasswordVaild", "密碼驗證錯誤。");
-                    //return View();
                 }
 
                 user.PasswordHash = passwordHasher.HashPassword(user, newPassword);
@@ -179,6 +198,27 @@ namespace Mvc.Services
                     Success = true
                 };
             }
+        }
+
+        public async Task<ServiceResult<User>> ConfirmEmail(string email, string token)
+        {
+            var user = await userRepository.GetUserByEmailAsync(email);
+            if (user == null)
+            {
+                return ServiceResult<User>.Failed("找不到使用者");
+            }
+
+            //cache
+            var cacheToken = memoryCache.Get<string>($"email-confirm={email}");
+            if (cacheToken == null || cacheToken != token)
+            {
+                return ServiceResult<User>.Failed("驗證信已失效，請重新驗證。");
+            }
+
+            user.IsApprovedEmail = true;
+            await userRepository.UpdateAsync(user);
+
+            return ServiceResult<User>.Ok(user);
         }
     }
 }

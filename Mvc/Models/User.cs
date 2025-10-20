@@ -14,5 +14,6 @@
         public string PasswordHash { get; set; }      
         public DateTime CreateTime { get; set; }
         public ERole Role { get; set; }
+        public bool IsApprovedEmail { get; set; } = false;       //信箱驗證
     }
 }

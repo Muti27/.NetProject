@@ -7,6 +7,7 @@ namespace Mvc.Models.Dtos
         public string Username { get; set; }
         [Required] public string Email { get; set; }
         [StringLength(20, MinimumLength = 6)] public string Password { get; set; }
+        [StringLength(20, MinimumLength = 6)] public string PasswordVerify { get; set; }
     }
 
     public class LoginDto
@@ -33,5 +34,11 @@ namespace Mvc.Models.Dtos
         public string oldPassword { get; set; }
         public string newPassword { get; set; }
         public string newPasswordVaild { get; set; }
+    }
+
+    public class ConfirmEmailDto
+    {
+        public string Email { get; set; }
+        public string Token { get; set; }
     }
 }

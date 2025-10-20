@@ -47,6 +47,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 #endif
 });
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
 
 // 本地sqlite 正式postgres
 if (builder.Environment.IsDevelopment())
@@ -66,6 +68,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSession();
 

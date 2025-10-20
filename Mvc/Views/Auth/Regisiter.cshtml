@@ -25,6 +25,12 @@
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
+    <div class="form-group mb-3">
+        <label asp-for="PasswordVerify"></label>
+        <input asp-for="PasswordVerify" type="password" class="form-control" />
+        <span asp-validation-for="PasswordVerify" class="text-danger"></span>
+    </div>
+
     @if (ViewBag.Error != null)
     {
         <div class="alert alert-danger">@ViewBag.Error</div>

@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Mvc.Migrations.PostgresMigrations
+namespace Mvc.Migrations.SqliteMigrations
 {
     /// <inheritdoc />
-    public partial class InitPostgres : Migration
+    public partial class AddUserIsApprove : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +36,8 @@ namespace Mvc.Migrations.PostgresMigrations
                     Email = table.Column<string>(type: "TEXT", nullable: false),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
                     CreateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Role = table.Column<int>(type: "INTEGER", nullable: false)
+                    Role = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsApprovedEmail = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

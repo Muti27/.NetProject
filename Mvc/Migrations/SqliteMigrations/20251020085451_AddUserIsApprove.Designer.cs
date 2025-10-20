@@ -8,11 +8,11 @@ using Mvc.Data;
 
 #nullable disable
 
-namespace Mvc.Migrations.PostgresMigrations
+namespace Mvc.Migrations.SqliteMigrations
 {
-    [DbContext(typeof(PostgresDbContext))]
-    [Migration("20251013132246_InitPostgres")]
-    partial class InitPostgres
+    [DbContext(typeof(SQLiteDbContext))]
+    [Migration("20251020085451_AddUserIsApprove")]
+    partial class AddUserIsApprove
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,6 +54,9 @@ namespace Mvc.Migrations.PostgresMigrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsApprovedEmail")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

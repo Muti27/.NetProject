@@ -48,7 +48,7 @@ namespace Mvc.Controllers
                 return View();
             }
 
-            var result = await authService.Regisiter(regisiterDto.Username, regisiterDto.Email, regisiterDto.Password);
+            var result = await authService.Regisiter(regisiterDto.Username, regisiterDto.Email, regisiterDto.Password, regisiterDto.PasswordVerify);
             if (result.Success == false)
             {
                 ViewBag.Error = result.Message;
@@ -203,6 +203,25 @@ namespace Mvc.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return RedirectToAction("Login", "Auth");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(string email, string token)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "輸入資料有誤。");
+                return View();
+            }
+
+            var result = await authService.ConfirmEmail(email, token);
+            if (!result.Success)
+            {
+                ViewBag.Error = result.Message;
+                return View();
+            }
+
+            return RedirectToAction("Login");
         }
     }
 }
