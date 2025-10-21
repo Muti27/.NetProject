@@ -1,17 +1,10 @@
-﻿using Humanizer;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.JSInterop.Infrastructure;
-using Mvc.Data;
 using Mvc.Models;
 using Mvc.Models.Dtos;
 using Mvc.Services;
-using System.Collections.Immutable;
-using System.Security;
 using System.Security.Claims;
 
 namespace Mvc.Controllers
@@ -25,6 +18,7 @@ namespace Mvc.Controllers
             authService = auth;
         }
 
+        #region View
         public IActionResult Regisiter()
         {
             return View();
@@ -37,8 +31,30 @@ namespace Mvc.Controllers
 
         public IActionResult ChangePassword()
         {
+            return View(new ChangePasswordViewModel());
+        }
+
+        public IActionResult ResetPassword(string email, string token)
+        {
+            var model = new ChangePasswordViewModel()
+            {
+                email = email,
+                token = token,
+                isResetMode = true,
+            };
+            return View("ChangePassword", model);
+        }
+
+        public IActionResult EmailVerify()
+        {
             return View();
         }
+
+        public IActionResult ForgetPassword()
+        {
+            return View();
+        }
+        #endregion
 
         [HttpPost]
         public async Task<IActionResult> Regisiter(RegisiterDto regisiterDto)
@@ -91,6 +107,7 @@ namespace Mvc.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.Username),                
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
@@ -179,25 +196,53 @@ namespace Mvc.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel viewModel)
         {
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "輸入資料有誤。");
-                return View(dto);
+                return View(viewModel);
             }
 
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (id == null)
+            if (viewModel.isResetMode)
             {
-                return NotFound();
-            }
+                var email = viewModel.email;
+                var token = viewModel.token;
 
-            var result = await authService.ChangePassword(int.Parse(id), dto.oldPassword, dto.newPassword, dto.newPasswordVaild);
-            if (!result.Success)
+                ChangePasswordDto dto = new ChangePasswordDto()
+                {
+                    newPassword = viewModel.newPassword,
+                    newPasswordVerify = viewModel.newPasswordVerify
+                };
+
+                var result = await authService.ResetPassword(email, token, dto.newPassword, dto.newPasswordVerify);
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    return View(viewModel);
+                }
+            }
+            else
             {
-                ModelState.AddModelError("", result.Message);
-                return View();
+                var email = User.FindFirstValue(ClaimTypes.Email);
+                if (email == null)
+                {
+                    return NotFound();
+                }
+
+                ChangePasswordDto dto = new ChangePasswordDto()
+                {
+                    oldPassword = viewModel.oldPassword,
+                    newPassword = viewModel.newPassword,
+                    newPasswordVerify = viewModel.newPasswordVerify
+                };
+
+                var result = await authService.ChangePassword(email, dto.oldPassword, dto.newPassword, dto.newPasswordVerify);
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+                    return View(viewModel);
+                }
             }
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -211,13 +256,51 @@ namespace Mvc.Controllers
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("", "輸入資料有誤。");
-                return View();
+                return RedirectToAction("Index", "Home");
             }
 
             var result = await authService.ConfirmEmail(email, token);
             if (!result.Success)
             {
                 ViewBag.Error = result.Message;
+                return RedirectToAction("Index", "Home");
+            }
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EmailVerify(EmailVerifyDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "輸入資料有誤。");
+                return View();
+            }            
+
+            var result = await authService.ReSendConfirmEmail(dto.Email);
+            if (!result.Success)
+            {
+                ModelState.AddModelError("", result.Message);
+                return View();
+            }
+
+            return RedirectToAction("Login");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgetPassword(EmailVerifyDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError("", "輸入資料有誤。");
+                return View();
+            }
+
+            var result = await authService.ForgetPassword(dto.Email);
+            if (!result.Success)
+            {
+                ModelState.AddModelError("", result.Message);
                 return View();
             }
 

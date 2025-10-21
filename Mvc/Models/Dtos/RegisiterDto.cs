@@ -33,12 +33,11 @@ namespace Mvc.Models.Dtos
     {
         public string oldPassword { get; set; }
         public string newPassword { get; set; }
-        public string newPasswordVaild { get; set; }
+        public string newPasswordVerify { get; set; }
     }
 
-    public class ConfirmEmailDto
+    public class EmailVerifyDto
     {
         public string Email { get; set; }
-        public string Token { get; set; }
     }
 }
