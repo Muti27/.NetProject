@@ -73,7 +73,11 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+#if DEBUG
 builder.Services.AddScoped<IEmailService, EmailService>();
+#else
+builder.Services.AddScoped<IEmailService, ResendEmailService>();
+#endif
 
 builder.Services.AddSession();
 
