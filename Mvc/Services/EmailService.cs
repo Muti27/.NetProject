@@ -1,12 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
-using NuGet.Common;
-using NuGet.Configuration;
-using System;
-using System.Buffers.Text;
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
-using System.Security.Policy;
 
 namespace Mvc.Services
 {

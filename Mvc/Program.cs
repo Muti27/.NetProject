@@ -53,8 +53,13 @@ builder.Services.AddHttpContextAccessor();
 // 本地sqlite 正式postgres
 if (builder.Environment.IsDevelopment())
 {
+#if DEBUG
     var connectionString = builder.Configuration.GetConnectionString("Local");
     builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
+#else
+    var connectionString = builder.Configuration.GetConnectionString("RenderPostgreSQL");
+    builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(connectionString));
+#endif
 }
 else
 {
