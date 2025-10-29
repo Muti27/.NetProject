@@ -4,62 +4,25 @@ using Mvc.Models;
 
 namespace Mvc.Repository
 {
-    public interface IUserRepository
+    public interface IUserRepository : IBaseRepository<User>
     {
-        Task<User?> GetUserByEmailAsync(string email);
-        Task<User?> GetUserByIdAsync(int id);
-        Task<List<User>> GetUserList();
-        Task AddAsync(User user);
-        Task UpdateAsync(User user);
-        Task DeleteAsync(User user);
+        Task<User?> GetByEmailAsync(string email);
     }
 
-    public class UserRepository : IUserRepository
+    public class UserRepository : BaseRepository<User>, IUserRepository
     {
-        private readonly AppDbContext dbContext;
+        public UserRepository(AppDbContext dbContext) : base(dbContext) { }        
 
-        public UserRepository(AppDbContext dbContext)
-        {
-            this.dbContext = dbContext;
-        }
-
-        public async Task<User?> GetUserByEmailAsync(string email)
+        public async Task<User?> GetByEmailAsync(string email)
         {
             var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == email);
 
             return user;
         }
 
-        public async Task<User?> GetUserByIdAsync(int id)
+        public override async Task<IEnumerable<User>> GetAllAsync()
         {
-            var user = await dbContext.Users.FindAsync(id);
-
-            return user;
-        }
-
-        public async Task<List<User>> GetUserList()
-        {
-            var list = await dbContext.Users.OrderBy(x => x.Id).ToListAsync();
-
-            return list;
-        }
-
-        public async Task AddAsync(User user)
-        {
-            await dbContext.Users.AddAsync(user);
-            await dbContext.SaveChangesAsync();
-        }
-
-        public async Task UpdateAsync(User user)
-        {
-            dbContext.Users.Update(user);
-            await dbContext.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(User user)
-        {
-            dbContext.Users.Remove(user);
-            await dbContext.SaveChangesAsync();
+            return await dbContext.Set<User>().OrderBy(x => x.Id).ToListAsync();
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using Mvc.Models;
 using Mvc.Repository;
+using System.Linq;
 
 namespace Mvc.Services
 {
@@ -37,7 +37,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> GetUser(int id)
         {
-            var user = await userRepository.GetUserByIdAsync(id);
+            var user = await userRepository.GetByIdAsync(id);
 
             if (user == null)
             {
@@ -57,14 +57,14 @@ namespace Mvc.Services
 
         public async Task<List<User>> GetUserList()
         {
-            var list = await userRepository.GetUserList();
+            var list = await userRepository.GetAllAsync();
 
-            return list;
+            return list.ToList();
         }
 
         public async Task<ServiceResult<User>> Login(string email, string password)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return new ServiceResult<User>
@@ -98,7 +98,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> Regisiter(string username, string email, string password, string passwordVerify)
         {
-            var exists = await userRepository.GetUserByEmailAsync(email);
+            var exists = await userRepository.GetByEmailAsync(email);
             if (exists != null)
             {
                 return ServiceResult<User>.Failed("此信箱已經註冊過會員。");
@@ -137,7 +137,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> DeleteUser(int id)
         {
-            var user = await userRepository.GetUserByIdAsync(id);
+            var user = await userRepository.GetByIdAsync(id);
             if (user == null)
             {
                 return new ServiceResult<User>
@@ -157,7 +157,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> ChangePassword(string email, string oldPassword, string newPassword, string newPasswordVaild)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return new ServiceResult<User>
@@ -200,7 +200,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> ResetPassword(string email, string token, string newPassword, string newPasswordVerify)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return ServiceResult<User>.Failed("找不到此會員。");
@@ -226,7 +226,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> ConfirmEmail(string email, string token)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return ServiceResult<User>.Failed("找不到使用者。");
@@ -247,7 +247,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> ReSendConfirmEmail(string email)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return ServiceResult<User>.Failed("");
@@ -265,7 +265,7 @@ namespace Mvc.Services
 
         public async Task<ServiceResult<User>> ForgetPassword(string email)
         {
-            var user = await userRepository.GetUserByEmailAsync(email);
+            var user = await userRepository.GetByEmailAsync(email);
             if (user == null)
             {
                 return ServiceResult<User>.Failed("");

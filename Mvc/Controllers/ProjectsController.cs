@@ -1,108 +1,78 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Mvc.Data;
 using Mvc.Models;
 using Mvc.Models.Dtos;
+using Mvc.Services;
 
 namespace Mvc.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class ProjectsController : ControllerBase
+    public class ProjectsController : Controller
     {
-        private readonly AppDbContext _context;
-        private readonly IMapper _mapper;
+        private readonly IProjectService projectService;
 
-        public ProjectsController(AppDbContext appDbContext, IMapper mapper)
+        public ProjectsController(IProjectService service)
         {
-            _context = appDbContext;
-            _mapper = mapper;
+            projectService = service;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Get()
+        public IActionResult Projects(int? projectId)
         {
-            var dtos = await _context.Projects
-                .AsQueryable()
-                .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-
-            return Ok(dtos);
-        }
-
-        [HttpGet("ById/{id}")]
-        public IActionResult GetProjectById(int id)
-        {
-            var dtos = _context.Projects
-                .Where(p => p.Id == id)
-                .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
-                .FirstOrDefault();
-
-            if (dtos == null)
-                return NotFound();
-
-            return Ok(dtos);
-        }
-
-        [HttpGet("ByName/{name}")]
-        public IActionResult GetProjectByName(string name)
-        {
-            var dtos = _context.Projects
-                .Where(p => p.Name == name)
-                .ProjectTo<ProjectDto>(_mapper.ConfigurationProvider)
-                .FirstOrDefault();
-
-            if (dtos == null)
-                return NotFound();
-
-            return Ok(dtos);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Create(CreateProjectDto createDto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var project = _mapper.Map<Project>(createDto);
-            _context.Projects.Add(project);
-            await _context.SaveChangesAsync();
-
-            var resultDto = _mapper.Map<ProjectDto>(project);
-            return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, resultDto);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, UpdateProjectDto updateDto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var project = _context.Projects.Find(id);
-            if (project == null)
-                return NotFound();
-
-            project = _mapper.Map<Project>(updateDto);
-            _context.SaveChanges();
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var project = _context.Projects.Find(id);
-            if (project == null)
+            if (projectId == null)
             {
-                return NotFound();
+
             }
 
-            _context.Projects.Remove(project);
-            _context.SaveChanges();
+            return View();
+        }
 
-            return NoContent();
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateProjectDto createDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var result = await projectService.Create(createDto);
+            if (!result.Success)
+            {
+                return View();
+            }
+
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Update(UpdateProjectDto updateDto)
+        {
+            if (!ModelState.IsValid)
+                return View();
+
+            var result = await projectService.Update(updateDto);
+            if (!result.Success)
+            {
+                return View();
+            }
+
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (!ModelState.IsValid)
+                return View();
+
+            var result = await projectService.Delete(id);
+            if (!result.Success)
+            {
+                return View();
+            }
+
+            return View();
         }
     }
 }
